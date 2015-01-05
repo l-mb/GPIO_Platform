@@ -178,7 +178,7 @@ Syntax: **write** *port* *value*
 Write the value to the specified port. Digital or analog ports are automatically
 handled. For digital ports, any non-zero value is treated as *HIGH*.
 
-##### output_add
+#### output_add
 
 Syntax: **output_add** *key* *port* *interval* *step* *offset* *mode* *pattern*
 
