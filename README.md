@@ -107,8 +107,8 @@ considered when this source is triggered via an interrupt.
 *port* is the integer port number. That is *1 - 53* for the digital
 ports, *54 - 65* for the analog inputs. If it is set to *0*, then this
 source is never read; this only makes sense for interrupt-driven
-sources, where the value then will be the time (in uS) since the last
-trigger.
+sources. See **source_attach_irq** for details on which value is
+considered then.
 
 If *samples* is not zero, GPIO_Platform will take this many samples into
 account before considering to report this value. This is an easy way to
@@ -144,29 +144,40 @@ source_add X 31 100000 10 2 1
 
 #### source_attach_irq
 
-Syntax: **source_attach_irq** *key* *port* *trigger*
+Syntax: **source_attach_irq** *key* *irq* *trigger* *count_ticks*
 
 Attach an interrupt-trigger to a source.
 
 - *key* refers to a previously configured source. Whenever this
   interrupt here triggers, that source is triggered for processing.
-- *port* refers to the port number that this interrupt handler should
-  monitor. Note that this can be different from the *port* specified for
-  the source itself. i.e., you can use a digital input port to trigger
-  the read of an analog input.
+- *irq* refers to the port number that this interrupt handler should
+  monitor.
 - *trigger* the trigger mode. If *0*, the interrupt is triggered on a
   falling edge. *1* triggers on a rising edge. And *2* triggers on any
   state change.
-
-Note that setting *port* or *period* to *0* during *source_add* invokes
-special behavior for this function, too.
+- *count_ticks* defines whether to count ticks since the last sampling
+  period.
+  - If set to *0* **and** the port on the source is *0*, the source measures the µS between triggers (interval).
+  - If set to *0* **and** the port on the source is set, the source samples the port whenever the interrupt triggers.
+  - If set to *1*, and the source has a *non-zero* period, the source will count the number of times the interrupt has triggered since the last period. This is an easy way to count pulses.
 
 ```
-// Report the value of analog port 3 whenever digital port 41 raises:
-
+// Report the value of analog port 3 whenever digital pin 41 falls:
 source_add A 57 0 0 0 0
 pin_in 41
-source_attach_irq A 41 1
+source_attach_irq A 41 0 0
+
+// Count the number of times digital pin 31 is raised per second:
+source_add D 0 1000000 0 0 0
+source_attach_irq D 31 1 1
+
+// Something more complex. Report the average interval between state
+// changes of pin 45, averaged over 8 samples each:
+source_add C 0 0 8 1 0
+source_attach_irq C 45 2 0
+// (Note that there is a catch here - *if* the final round of times
+//  interrupt 45 triggers is less than 8 times, that last period is
+//  never reported. There is currently no final timeout.)
 ```
 
 ### Outputs

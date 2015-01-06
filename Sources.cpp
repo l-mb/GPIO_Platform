@@ -27,16 +27,13 @@ static void source_add_value(int i);
 void sources_setup(void) {
 	int i;
 
-	for (i = 0; i < ISREntries; i++) {
-		if (ISRTable[i].p)
-			detachInterrupt(ISRTable[i].p);
-		ISRTable[i].p = 0;
-		ISRTable[i].trigger = 0;
-		ISRTable[i].s = 0;
-	}
-	ISREntries = 0;
+	noInterrupts();
+	for (i = 0; i < Sources.entries; i++)
+		if (Sources.s[i].irq)
+			detachInterrupt(Sources.s[i].irq);
 	rb.setup();
 	memset(&Sources, 0, sizeof(tSources));
+	interrupts();
 }
 
 // Not to be called in interrupt context!
@@ -68,40 +65,52 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 	interrupts();
 }
 
-// This is a little bit ugly!
-static void _ISR_Handler_0(void) {
-	source_add_value(ISRTable[0].s);		
+// So yes, this is a bit ugly. It's needed because IRQ handlers don't
+// take arguments; there's one IRQ handler per source table entry.
+
+#define _IRQ_Handler_X(n) static void _IRQ_Handler_##n(void) { \
+	if (Sources.s[n].count_ticks) \
+		Sources.s[n].ticks++; \
+	else \
+		source_add_value(n); \
 }
 
-static void _ISR_Handler_1(void) {
-	source_add_value(ISRTable[1].s);		
-}
+_IRQ_Handler_X(0);
+_IRQ_Handler_X(1);
+_IRQ_Handler_X(2);
+_IRQ_Handler_X(3);
+_IRQ_Handler_X(4);
+_IRQ_Handler_X(5);
+_IRQ_Handler_X(6);
+_IRQ_Handler_X(7);
+_IRQ_Handler_X(8);
+_IRQ_Handler_X(9);
+_IRQ_Handler_X(10);
+_IRQ_Handler_X(11);
+_IRQ_Handler_X(12);
+_IRQ_Handler_X(13);
+_IRQ_Handler_X(14);
+_IRQ_Handler_X(15);
 
-static void _ISR_Handler_2(void) {
-	source_add_value(ISRTable[2].s);		
-}
+// This is separate from the Source table so that that can simply
+// be wiped using memset().
 
-static void _ISR_Handler_3(void) {
-	source_add_value(ISRTable[3].s);		
-}
-
-tISREntry ISRTable[ISRSIZE] = {
-	{ .p = 0, .s = 0, .trigger = 0, .handler = &_ISR_Handler_0 },
-	{ .p = 0, .s = 0, .trigger = 0, .handler = &_ISR_Handler_1 },
-	{ .p = 0, .s = 0, .trigger = 0, .handler = &_ISR_Handler_2 },
-	{ .p = 0, .s = 0, .trigger = 0, .handler = &_ISR_Handler_3 },
+void (*IRQ_Handlers[SOURCES_MAX])(void) =
+	{ &_IRQ_Handler_0, &_IRQ_Handler_1, &_IRQ_Handler_2, &_IRQ_Handler_3,
+	&_IRQ_Handler_4, &_IRQ_Handler_5, &_IRQ_Handler_6, &_IRQ_Handler_7,
+	&_IRQ_Handler_8, &_IRQ_Handler_9, &_IRQ_Handler_10, &_IRQ_Handler_11,
+	&_IRQ_Handler_12, &_IRQ_Handler_13, &_IRQ_Handler_14, &_IRQ_Handler_15
 };
 
-int ISREntries = 0;
-
-void source_attach_irq(char k, int p, int trigger) {
+void source_attach_irq(char k, int irq, int trigger, int count_ticks) {
 	int i;
-	int isr;
 	tSourceEntry *s;
 
-	for (i = 0; i < Sources.entries; i++)
-		if (Sources.s[i].k == k)
+	for (i = 0; i < Sources.entries; i++) {
+		s = &Sources.s[i];
+		if (s->k == k)
 			break;
+	}
 
 	if (i == Sources.entries) {
 			SerialUSB.println("WARN This source key does not exist");
@@ -118,20 +127,21 @@ void source_attach_irq(char k, int p, int trigger) {
 		SerialUSB.print("WARN Unknown IRQ trigger specified.");
 		return;
 	}
-
-	if (ISREntries == ISRSIZE) {
-		SerialUSB.print("WARN Too many ISRs");
+	
+	s->irq = irq;
+	s->trigger = trigger;
+	s->count_ticks = count_ticks;
+	
+	if (s->count_ticks && !s->period) {
+		SerialUSB.println("WARN Counting ticks requires period to be non-zero");
 		return;
 	}
-	
-	isr = ISREntries;
-	
-	ISRTable[isr].p = p;
-	ISRTable[isr].s = i;
-	ISRTable[isr].trigger = trigger;
-	attachInterrupt(p, ISRTable[isr].handler, trigger);
-	
-	ISREntries++;
+
+	if (IRQ_Handlers[i]) {
+		attachInterrupt(irq, IRQ_Handlers[i], trigger);
+	} else {
+		SerialUSB.println("ERROR No IRQ handler available!?");
+	}
 }
 
 static void source_add_value(int i) {
@@ -141,11 +151,14 @@ static void source_add_value(int i) {
 	
 	/* If p is 0, this is an interrupt-driven source and we're
 	 * actually sampling the interrupt interval. */
-	if (s->p) {
-		v = port_read(s->p);
-	} else {
+	if (!s->period && !s->p) {
 		v = t - s->last_t;
 		s->last_t = t;
+	} else if (s->p) {
+		v = port_read(s->p);
+	} else if (s->count_ticks) {
+			v = s->ticks;
+			s->ticks = 0;
 	}
 
 	rb.push(t, i, v);

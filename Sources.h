@@ -31,7 +31,7 @@ typedef struct {
 			// the interrupt table allows samples to be
 			// driven by an external interrupt
 	int period;	// uS interval between samples
-			// Can be 0 for sources that are only interrupt-driven
+			// Can be 0 for sources that only count IRQ intervals
 	int avg;	// Average over this many samples; 0 = use raw value
 	int mode;	// 0 = sliding average
 			// 1 = one full period every time
@@ -39,16 +39,23 @@ typedef struct {
 			// 3 = Oversampling to improve resolution (TODO)
 	int delta;	// Report only if the value has changed by at least this
 
+	// For IRQs:
+	int irq;	// Port triggering the IRQ
+	int trigger;	// Trigger mode
+	int count_ticks;// Tricky!
+			// If 1, measure the number of ticks per period instead
+
 	// House keeping:
 	int countdown;	// Ticks down on every invocation
 	int last_v;	// Last reported value, if only reporting changes
 	long last_t;	// For interrupt-driven sources: last tick
 	int buf[SAMPLES_MAX]; // A buffer for averaging values
 	int cur;	// cursor in the buffer
+	int ticks;	// For IRQs: how often has this ticked in this period
 	bool filled;	// If the buffer has been filled at least once
 } tSourceEntry;
 
-#define SOURCES_MAX 32
+#define SOURCES_MAX 16
 
 typedef struct {
 	char entries;
@@ -59,23 +66,12 @@ extern tSources Sources;
 
 extern RingBuf rb;
 
-typedef struct {
-	int p;	// Port triggering the ISR
-	int s;	// Source reference
-	int trigger;	// Trigger mode
-	void (*handler)(void);
-} tISREntry;
-
-#define ISRSIZE 4
-extern tISREntry ISRTable[ISRSIZE];
-extern int ISREntries;
-
 void source_add(char k, char p, int period, int avg, int mode, int delta);
 void sources_setup(void);
 
 // Called from main code's interrupt handler
 void sources_poll(void);
 void sources_process(void);
-void source_attach_irq(char k, int p, int trigger);
+void source_attach_irq(char k, int p, int trigger, int count_ticks);
 
 #endif

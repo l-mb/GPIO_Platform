@@ -87,10 +87,10 @@ static void cmd_start() {
 
 static void cmd_source_add() {
 	char k;
-	int period;
 	int p;
-	int mode;
+	int period;
 	int avg;
+	int mode;
 	int delta;
 
 	if (!parse_char(&k))
@@ -123,16 +123,21 @@ static void cmd_source_add() {
 	source_add(k, p, period, avg, mode, delta);
 }
 
+// Technically, this also only modifies the Sources table
+// But that function really, really was getting too large
 static void cmd_source_attach_irq() {
 	char k;
 	int p;
 	int trigger;
+	int count_ticks;
 
 	if (!parse_char(&k))
 		return;
 	if (!parse_int(&p))
 		return;
 	if (!parse_int(&trigger))
+		return;
+	if (!parse_int(&count_ticks))
 		return;
 
 	if (debug) {
@@ -141,9 +146,11 @@ static void cmd_source_attach_irq() {
 		SerialUSB.print(DELIM);
 		SerialUSB.print(p);
 		SerialUSB.print(DELIM);
-		SerialUSB.println(trigger);
+		SerialUSB.print(trigger);
+		SerialUSB.print(DELIM);
+		SerialUSB.println(count_ticks);
 	}
-	source_attach_irq(k, p, trigger);
+	source_attach_irq(k, p, trigger, count_ticks);
 }
 
 static void cmd_output_add() {
@@ -199,41 +206,35 @@ static void cmd_dump() {
 	SerialUSB.print(" Currently enabled: ");
 	SerialUSB.println(Master.started);
 
-	SerialUSB.print("INFO Ringbuffer entries: ");
-	SerialUSB.print(rb.entries());
-	SerialUSB.print(" Has overflown: ");
-	SerialUSB.println(rb.overflow());
-
 	SerialUSB.print("INFO Sources: ");
 	SerialUSB.println((int)Sources.entries);
 
 	for (i = 0; i < Sources.entries; i++) {
-		SerialUSB.print(" source_add ");
-		SerialUSB.print(Sources.s[i].k);
-		SerialUSB.print(DELIM);
-		SerialUSB.print(Sources.s[i].p);
-		SerialUSB.print(DELIM);
-		SerialUSB.print(Sources.s[i].period);
-		SerialUSB.print(DELIM);
-		SerialUSB.print(Sources.s[i].avg);
-		SerialUSB.print(DELIM);
-		SerialUSB.print(Sources.s[i].mode);
-		SerialUSB.print(DELIM);
-		SerialUSB.println(Sources.s[i].delta);
-		SerialUSB.print(" Index: ");
-		SerialUSB.println(i);
-	}
-
-	SerialUSB.print("INFO Attached interrupts: ");
-	SerialUSB.println((int)ISREntries);
-
-	for (i = 0; i < ISREntries; i++) {
-		SerialUSB.print(" Source index: ");
-		SerialUSB.print(ISRTable[i].s);
+		tSourceEntry *s = &Sources.s[i];
+		
+		SerialUSB.print(" Key: ");
+		SerialUSB.print(s->k);
 		SerialUSB.print(" Port: ");
-		SerialUSB.print(ISRTable[i].p);
-		SerialUSB.print(DELIM);
-		SerialUSB.print(ISRTable[i].trigger);
+		SerialUSB.print(s->p);
+		SerialUSB.print(" Period: ");
+		SerialUSB.print(s->period);
+		SerialUSB.print(" Avg: ");
+		SerialUSB.print(s->avg);
+		SerialUSB.print(" Mode: ");
+		SerialUSB.print(s->mode);
+		SerialUSB.print(" Delta: ");
+		SerialUSB.println(s->delta);
+
+		if (s->irq) {
+			SerialUSB.print("  IRQ: ");
+			SerialUSB.print(s->irq);
+			SerialUSB.print(" Trigger: ");
+			SerialUSB.print(s->trigger);
+			SerialUSB.print(" Counter: ");
+			SerialUSB.println(s->count_ticks);
+		}
+
+		SerialUSB.print(" Index: ");
 		SerialUSB.println(i);
 	}
 
@@ -263,6 +264,11 @@ static void cmd_dump() {
 		SerialUSB.print(" pos: ");
 		SerialUSB.println(out->last_step);
 	}
+
+	SerialUSB.print("INFO Ringbuffer entries: ");
+	SerialUSB.print(rb.entries());
+	SerialUSB.print(" Has overflown: ");
+	SerialUSB.println(rb.overflow());
 }
 
 static void cmd_pattern_list() {
