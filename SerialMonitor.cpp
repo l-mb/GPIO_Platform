@@ -268,7 +268,7 @@ static void cmd_dump() {
 	SerialUSB.print("INFO Ringbuffer entries: ");
 	SerialUSB.print(rb.entries());
 	SerialUSB.print(" Has overflown: ");
-	SerialUSB.println(rb.overflow());
+	SerialUSB.println((int)rb.overflow());
 }
 
 static void cmd_pattern_list() {

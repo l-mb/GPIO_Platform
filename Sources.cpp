@@ -41,12 +41,20 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 	int i;
 	tSourceEntry *s;
 
-	if (Sources.entries >= SOURCES_MAX)
+	if (Sources.entries >= SOURCES_MAX) {
+		SerialUSB.println("ERROR Too many sources defined.");
 		return;
+	}
+	if (avg > SAMPLES_MAX) {
+		SerialUSB.println("ERROR Averaging too many samples");
+		return;
+	}
 
 	for (i = 0; i < Sources.entries; i++) {
-		if (Sources.s[i].k == k)
+		if (Sources.s[i].k == k) {
+			SerialUSB.println("ERROR That source key already exists.");
 			return;
+		}
 	}
 
 	noInterrupts();
@@ -69,7 +77,7 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 // take arguments; there's one IRQ handler per source table entry.
 
 #define _IRQ_Handler_X(n) static void _IRQ_Handler_##n(void) { \
-	if (Sources.s[n].count_ticks) \
+	if (Sources.s[n].count_ticks > 0) \
 		Sources.s[n].ticks++; \
 	else \
 		source_add_value(n); \
@@ -160,7 +168,7 @@ static void source_add_value(int i) {
 		s->last_t = t;
 	} else if (s->p > 0) {
 		v = port_read(s->p);
-	} else if (s->count_ticks) {
+	} else if (s->count_ticks > 0) {
 		v = s->ticks;
 		s->ticks = 0;
 	}
@@ -204,21 +212,24 @@ void sources_process(void) {
 		rb.pull(&t, &i, &v);
 		s = &Sources.s[i];
 		
-		if (s->avg) {
+		if (s->avg > 0) {
 			long sum = 0;
 			int j;
 
 			s->buf[s->cur] = v;
 
-			if (s->cur == s->avg - 1)
+			s->cur++;	
+			if (s->cur == s->avg) {
+				s->cur = 0;
 				s->filled = true;
-		
+			}
+
 			/* Always take a full sample first */
 			if (!s->filled)
 				continue;
-			
+
 			// Mode 0 = sliding average
-			if (s->mode == 0 || s->mode == 1) {
+			if (s->mode < 2) {
 				for (j = 0; j < s->avg; j++)
 					sum += s->buf[j];
 				v = sum / s->avg;
@@ -228,17 +239,13 @@ void sources_process(void) {
 				// mode 2 only reports if all values agree
 				// Especially for digital values this allows
 				// the source to settle
-				for (j = 1; j < s->avg; j++)
+				for (j = 1; j < s->avg; j++) {
 					if (s->buf[0] != s->buf[j]) {
 						v = s->last_v;
 						break;
 					}
+				}
 			}
-			
-			if (s->cur == s->avg-1)
-				s->cur = 0;
-			else
-				s->cur++;
 		}
 
 		if (abs(s->last_v - v) >= s->delta) {
@@ -251,5 +258,4 @@ void sources_process(void) {
 		}
 	}
 }
-
 
