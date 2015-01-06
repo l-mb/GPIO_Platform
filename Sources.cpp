@@ -148,17 +148,21 @@ static void source_add_value(int i) {
 	tSourceEntry *s = &Sources.s[i];
 	unsigned long t = micros();
 	int v;
-	
+
+	if (i >= Sources.entries) {
+		SerialUSB.println("Uh-oh! Something really bad happened.");
+	}
+
 	/* If p is 0, this is an interrupt-driven source and we're
 	 * actually sampling the interrupt interval. */
-	if (!s->period && !s->p) {
+	if ((s->period == 0) && (s->p > 0)) {
 		v = t - s->last_t;
 		s->last_t = t;
-	} else if (s->p) {
+	} else if (s->p > 0) {
 		v = port_read(s->p);
 	} else if (s->count_ticks) {
-			v = s->ticks;
-			s->ticks = 0;
+		v = s->ticks;
+		s->ticks = 0;
 	}
 
 	rb.push(t, i, v);
