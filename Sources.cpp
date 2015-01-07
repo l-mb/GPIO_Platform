@@ -93,7 +93,7 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 
 	noInterrupts();
 	Sources.entries++;
-	master_period(period);
+	master_period();
 	interrupts();
 }
 
@@ -206,6 +206,9 @@ void source_del(char k) {
 		memcpy(s, o, sizeof(tSourceEntry));
 	memset(o, 0, sizeof(tSourceEntry));
 	Sources.entries--;
+
+	master_period();
+
 	interrupts();
 }
 

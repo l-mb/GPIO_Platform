@@ -36,7 +36,7 @@ extern int debug;
 
 extern tMaster Master;
 
-void master_period(unsigned long period);
+void master_period(void);
 
 #endif
 

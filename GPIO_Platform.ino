@@ -45,7 +45,7 @@ static int gcd(int a, int b) {
 }
 
 // To be called while interrupts are disabled
-void master_period(unsigned long period) {
+void master_period(void) {
 	int i;
 	int new_period;
 

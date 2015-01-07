@@ -84,6 +84,9 @@ void output_del(const char k) {
 		memcpy(out, last, sizeof(tOutputEntry));
 	memset(last, 0, sizeof(tOutputEntry));
 	Outputs.entries--;
+
+	master_period();
+
 	interrupts();
 }
 
@@ -142,7 +145,7 @@ void output_add(const char k, const int p, const int period, const int step, con
 	output_reset(Outputs.entries);
 	Outputs.entries++;
 
-	master_period(period);
+	master_period();
 
 	interrupts();
 }
