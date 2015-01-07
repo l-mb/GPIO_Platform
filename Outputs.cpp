@@ -63,12 +63,13 @@ static void output_reset(int i) {
 	port_write(out->p, out->v->v[out->last_step]);
 }
 
-/*
 void output_del(const char k) {
 	int i;
+	tOutputEntry *out, *last;
 
 	for (i = 0; i < Outputs.entries; i++) {
-		if (Outputs.out[i].k == k)
+		out = &Outputs.out[i];
+		if (out->k == k)
 			break;
 	}
 	if (i == Outputs.entries) {
@@ -77,12 +78,14 @@ void output_del(const char k) {
 		return;
 	}
 
+	last = &Outputs.out[Outputs.entries-1];
 	noInterrupts();
-	memcpy(&Outputs.out[i], &Outputs.out[Outputs.entries-1], sizeof(tOutputEntry));
+	if (last != out)
+		memcpy(out, last, sizeof(tOutputEntry));
+	memset(last, 0, sizeof(tOutputEntry));
 	Outputs.entries--;
 	interrupts();
 }
-*/
 
 void outputs_reset(void) {
 	int i;

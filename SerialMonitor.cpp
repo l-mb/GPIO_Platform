@@ -210,6 +210,19 @@ static void cmd_output_add() {
 	output_add(k, p, period, step, offset, mode, name);
 }
 
+static void cmd_output_del() {
+	char k;
+
+	if (!parse_char(&k))
+		return;
+
+	if (debug) {
+		SerialUSB.print("DEBUG Deleting output: ");
+		SerialUSB.println(k);
+	}
+	output_del(k);
+}
+
 // It's because of this function primarily that so many data structures
 // are exposed globally, but it is quite useful for debugging.
 static void cmd_dump() {
@@ -435,6 +448,7 @@ static tCmdTableEntry CmdTable[] = {
 
 	{ .cmd = "output_add", .handler = &cmd_output_add },
 	{ .cmd = "output_reset", .handler = &cmd_output_reset },
+	{ .cmd = "output_del", .handler = &cmd_output_del },
 
 	{ .cmd = "pattern_list", .handler = &cmd_pattern_list },
 
