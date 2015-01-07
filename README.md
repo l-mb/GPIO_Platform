@@ -69,14 +69,11 @@ GPIO_Platform does not produce a lot of output by itself, unless you
 enable debug mode. The main information that you are going to be
 interested in are the values read from the inputs.
 
-These are reported in the following format: *time* *key* *value* Which
-is pretty much self-explanatory:
+These are reported in the following format: __*time* *key* *value*__
 
-* *time* is reported relative to the
-last reported value on the serial monitor in micro-seconds (that is, one
-millionth of a second).
-* *key* is a one character used to identify the respective source.
-* *value* the integer value read (or computed) for this value.
+* *time* is reported relative to the last reported value on the serial monitor in micro-seconds (that is, one millionth of a second)
+* *key* is a one character used to identify the respective source (specified when you configure it)
+* *value* the integer value read (or computed) for this source
 
 ## Command reference
 

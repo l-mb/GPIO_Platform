@@ -344,11 +344,7 @@ static void cmd_read() {
 		return;
 
 	v = port_read(port);
-	SerialUSB.print(micros());
-	SerialUSB.print(DELIM);
-	SerialUSB.print(k);
-	SerialUSB.print(DELIM);
-	SerialUSB.println(v);
+	SerialMonitor_log(micros(), k, v);
 }
 
 static void cmd_pin_in() {
@@ -459,6 +455,17 @@ static void cmd_execute() {
 			CmdTable[i].handler();
 		}
 	}
+}
+
+void SerialMonitor_log(unsigned long t, char k, int v) {
+	static unsigned long last_t = 0;
+
+	SerialUSB.print((unsigned long)(t-last_t));
+	SerialUSB.print(DELIM);
+	SerialUSB.print(k);
+	SerialUSB.print(DELIM);
+	SerialUSB.println(v);
+	last_t = t;
 }
 
 void SerialMonitor_poll(void) {

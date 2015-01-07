@@ -17,6 +17,7 @@
  */
 
 #include "Sources.h"
+#include "SerialMonitor.h"
 
 tSources Sources;
 
@@ -197,7 +198,6 @@ void sources_poll() {
 }
 
 void sources_process(void) {
-	static unsigned long last_t;
 	tSourceEntry *s;
 	unsigned long t;
 	int v;
@@ -249,11 +249,7 @@ void sources_process(void) {
 		}
 
 		if (abs(s->last_v - v) >= s->delta) {
-			SerialUSB.print((unsigned long)(t-last_t));
-			SerialUSB.print(";");
-			SerialUSB.print(s->k);
-			SerialUSB.print(";");
-			SerialUSB.println(v);
+			SerialMonitor_log(t, s->k, v);
 			s->last_v = v;
 		}
 	}

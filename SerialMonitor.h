@@ -25,6 +25,7 @@
 
 void SerialMonitor_poll(void);
 void SerialMonitor_setup(void);
+void SerialMonitor_log(unsigned long t, char k, int v);
 
 #endif
 
