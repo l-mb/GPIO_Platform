@@ -161,7 +161,7 @@ Attach an interrupt-trigger to a source.
 ```
 // Report the value of analog port 3 whenever digital pin 41 falls:
 source_add A 57 0 0 0 0
-pin_in 41
+pin 41 0
 source_attach_irq A 41 0 0
 
 // Count the number of times digital pin 31 is raised per second:
@@ -272,18 +272,15 @@ Wipe all configured sources and outputs.
 
 ### Other commands
 
-#### pin_out
+#### pin
 
-Syntax: **pin_out** *pin*
+Syntax: **pin** *pin* *mode*
 
-Set the specified pin to output. (A 1:1 wrapper around the pinMode()
-command.)
+Set the specified *pin* to the specified *mode*.
 
-#### pin_out
-
-Syntax: **pin_in** *pin*
-
-Set the specified pin to input.
+- *mode* set to *0* corresponds to *INPUT*
+- *mode* set to *1* corresponds to *INPUT_PULLUP*
+- *mode* set to *2* corresponds to *OUTPUT*
 
 #### help
 

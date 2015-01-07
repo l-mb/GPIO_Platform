@@ -348,37 +348,39 @@ static void cmd_read() {
 	SerialMonitor_log(micros(), k, v);
 }
 
-static void cmd_pin_in() {
-	int port;
-
-	if (!parse_int(&port))
-		return;
-
-	if (debug) {
-		SerialUSB.print("DEBUG Setting pinMode input for ");
-		SerialUSB.println(port);
-	}
-
-	pinMode(port, INPUT);
-}
-
 static void cmd_output_reset() {
 	if (debug) SerialUSB.println("DEBUG All outputs back to 0.");
 	outputs_reset();
 }
 
-static void cmd_pin_out() {
+static void cmd_pin() {
 	int port;
+	int mode;
 
 	if (!parse_int(&port))
 		return;
+	if (!parse_int(&mode))
+		return;
 
-	if (debug) {
-		SerialUSB.print("DEBUG Setting pinMode output for ");
-		SerialUSB.println(port);
+	if (!PIN_OK(port)) {
+		SerialUSB.println("WARN Port not valid");
+		return;
 	}
 
-	pinMode(port, OUTPUT);
+	switch (mode) {
+	case 0:	pinMode(port, INPUT);
+		if (debug) SerialUSB.println("DEBUG Pin set to INPUT");
+		break;
+	case 1:	pinMode(port, INPUT_PULLUP);
+		if (debug) SerialUSB.println("DEBUG Pin set to INPUT_PULLUP");
+		break;
+	case 2:	pinMode(port, OUTPUT);
+		if (debug) SerialUSB.println("DEBUG Pin set to OUTPUT");
+		break;
+	default:
+		if (debug) SerialUSB.println("WARN Unknown pin mode.");
+		break;
+	}
 }
 
 static void cmd_debug() {
@@ -422,8 +424,7 @@ static tCmdTableEntry CmdTable[] = {
 
 	{ .cmd = "pattern_list", .handler = &cmd_pattern_list },
 
-	{ .cmd = "pin_in", .handler = &cmd_pin_in },
-	{ .cmd = "pin_out", .handler = &cmd_pin_out },
+	{ .cmd = "pin", .handler = &cmd_pin },
 	{ .cmd = "debug", .handler = &cmd_debug },
 	{ .cmd = "dump", .handler = &cmd_dump },
 	{ .cmd = "clear", .handler = &cmd_clear },
