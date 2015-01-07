@@ -326,7 +326,7 @@ overload the Due.
 
 # Copyright and License statement
 
-Copyright (C) 2014 Lars Marowsky-Bree <lars@marowsky-bree.de>
+Copyright (C) 2014 Lars Marowsky-Bree (lars@marowsky-bree.de)
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
