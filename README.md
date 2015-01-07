@@ -177,6 +177,12 @@ source_attach_irq C 45 2 0
 //  never reported. There is currently no final timeout.)
 ```
 
+#### source_del
+
+Syntax: **source_del** *key*
+
+Delete the given source.
+
 ### Outputs
 
 #### write
@@ -250,6 +256,12 @@ start
 #### pattern_list
 
 List all available patterns.
+
+#### output_del
+
+Syntax: **output_del** *key*
+
+Delete the given output.
 
 #### output_reset
 
