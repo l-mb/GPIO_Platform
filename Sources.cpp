@@ -43,15 +43,16 @@ static void source_update_method(int i) {
 
 	if (!s->period && s->p) {
 		s->method = 2;
-	} else if (s->p > 0) {
+	} else if (s->p) {
 		if (PIN_ANA(s->p))
 			s->method = 0;
 		else
 			s->method = 1;
-	} else if (s->count_ticks > 0) {
+	} else if (s->count_ticks) {
 		s->method = 3;
 	} else {
-		SerialUSB.println("ERROR No matching read method for source");
+		// SerialUSB.println("WARN No matching read method for source");
+		return;
 	}
 }
 
@@ -68,7 +69,7 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 		SerialUSB.println("ERROR Averaging too many samples");
 		return;
 	}
-	if (!PIN_IN(p)) {
+	if (!PIN_IN(p) && (p > 0)) {
 		SerialUSB.println("ERROR Invalid port for input");
 		return;
 	}
@@ -192,7 +193,8 @@ static void source_add_value(int i) {
 	case 3: v = s->ticks;
 		s->ticks = 0;
 		break;
-	default: return; // This should never happen.
+	default: return; // This can only happen if an interrupt tick
+			 // counter isn't fully configured yet
 		break;
 	}
 
