@@ -68,6 +68,7 @@ extern tSources Sources;
 extern RingBuf rb;
 
 void source_add(char k, char p, int period, int avg, int mode, int delta);
+void source_del(char k);
 void sources_setup(void);
 
 // Called from main code's interrupt handler

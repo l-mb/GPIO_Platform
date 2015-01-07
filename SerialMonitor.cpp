@@ -154,6 +154,19 @@ static void cmd_source_attach_irq() {
 	source_attach_irq(k, p, trigger, count_ticks);
 }
 
+static void cmd_source_del() {
+	char k;
+
+	if (!parse_char(&k))
+		return;
+
+	if (debug) {
+		SerialUSB.print("DEBUG Deleting source: ");
+		SerialUSB.println(k);
+	}
+	source_del(k);
+}
+
 static void cmd_output_add() {
 	char k;
 	int p;
@@ -418,6 +431,7 @@ static tCmdTableEntry CmdTable[] = {
 
 	{ .cmd = "source_add", .handler = &cmd_source_add },
 	{ .cmd = "source_attach_irq", .handler = &cmd_source_attach_irq },
+	{ .cmd = "source_del", .handler = &cmd_source_del },
 
 	{ .cmd = "output_add", .handler = &cmd_output_add },
 	{ .cmd = "output_reset", .handler = &cmd_output_reset },

@@ -179,6 +179,36 @@ void source_attach_irq(char k, int irq, int trigger, int count_ticks) {
 	interrupts();
 }
 
+void source_del(char k) {
+	int i;
+	tSourceEntry *s, *o;
+
+	for (i = 0; i < Sources.entries; i++) {
+		s = &Sources.s[i];
+		if (s->k == k)
+			break;
+	}
+
+	if (i == Sources.entries) {
+			SerialUSB.println("WARN This source key does not exist");
+			return;
+	}
+	
+	if (s->irq)
+		detachInterrupt(s->irq);
+	
+	o = &Sources.s[Sources.entries-1];
+
+	noInterrupts();
+	// This can happen if this is the last entry already. Not
+	// harmful, but why risk it?
+	if (s != o)
+		memcpy(s, o, sizeof(tSourceEntry));
+	memset(o, 0, sizeof(tSourceEntry));
+	Sources.entries--;
+	interrupts();
+}
+
 static void source_add_value(int i) {
 	tSourceEntry *s = &Sources.s[i];
 	unsigned long t = micros();
