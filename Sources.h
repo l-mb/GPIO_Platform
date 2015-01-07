@@ -53,6 +53,7 @@ typedef struct {
 	int cur;	// cursor in the buffer
 	int ticks;	// For IRQs: how often has this ticked in this period
 	bool filled;	// If the buffer has been filled at least once
+	unsigned char method; // Which method to use for acquiring values
 } tSourceEntry;
 
 #define SOURCES_MAX 16

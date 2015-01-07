@@ -21,21 +21,6 @@
 
 #include "Arduino.h"
 
-/////////////////////////////////////////////////////////////////////////////
-// PWM ports should always be driven using analogWrite
-#define PWM_MIN 2
-#define PWM_MAX 13
-// Multi-purpose digital IO ports - need to be set to one state or the
-// other
-#define DIGITAL_MIN 22
-#define DIGITAL_MAX 53
-// Analogs are input only
-#define ANALOG_MIN 54
-#define ANALOG_MAX 65
-// DAC are output only
-#define DAC_MIN 66
-#define DAC_MAX 67
-
 /****************************************************************************
  Global timer handling
  ****************************************************************************/
@@ -50,9 +35,6 @@ typedef struct {
 extern int debug;
 
 extern tMaster Master;
-
-void port_write(int p, int v);
-int port_read(int p);
 
 void master_period(unsigned long period);
 

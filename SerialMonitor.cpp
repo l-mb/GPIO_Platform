@@ -19,6 +19,7 @@
 #include "SerialMonitor.h"
 #include "Sources.h"
 #include "Outputs.h"
+#include "Lowlevel.h"
 #include <DueTimer.h>
 
 static char serialCmd[128] = "\0";
@@ -211,7 +212,7 @@ static void cmd_dump() {
 
 	for (i = 0; i < Sources.entries; i++) {
 		tSourceEntry *s = &Sources.s[i];
-		
+
 		SerialUSB.print(" Key: ");
 		SerialUSB.print(s->k);
 		SerialUSB.print(" Port: ");

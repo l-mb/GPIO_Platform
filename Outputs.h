@@ -36,6 +36,7 @@ typedef struct {
 	// Internal
 	int countdown;
 	int last_step;
+	bool analog;	// Whether to use analog or digitalWrite
 	tPattern *v;
 } tOutputEntry;
 

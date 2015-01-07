@@ -19,6 +19,7 @@
 #include "GPIO_Platform.h"
 #include "Outputs.h"
 #include "RingBuf.h"
+#include "Lowlevel.h"
 
 tOutputs Outputs;
 
@@ -111,11 +112,10 @@ void output_add(const char k, const int p, const int period, const int step, con
 	}
 
 	if (Outputs.entries == OUTPUT_SIZE) {
-		SerialUSB.println("Too many output patterns requested");
+		SerialUSB.println("ERROR Too many output patterns requested");
 		return;
 	}
 
-	noInterrupts();
 
 	out = &Outputs.out[Outputs.entries];
 	out->k = k;
@@ -126,6 +126,16 @@ void output_add(const char k, const int p, const int period, const int step, con
 	out->mode = mode;
 	out->v = &Patterns[i];
 
+	if (PIN_DIG(p)) {
+		out->analog = false;
+	} else if (PIN_PWM(p) || PIN_DAC(p)) {
+		out->analog = true;
+	} else {
+		SerialUSB.println("ERROR Invalid pin for output");
+		return;
+	}
+
+	noInterrupts();
 	output_reset(Outputs.entries);
 	Outputs.entries++;
 
@@ -150,22 +160,26 @@ void outputs_push(void) {
 			out->countdown = out->period;
 
 			if (step >= out->v->len) {
-				if (out->mode == 0) {
+				if (!out->mode) {
 					step = 0;
-				} else if (out->mode == 1) {
+				} else {
 					out->step = -out->step;
 					step = out->v->len-1;
 				}
 			} else if (step < 0) {
 				step = 0;
-				if (out->mode == 1) {
+				if (out->mode) {
 					out->step = -out->step;
 				}
 			}
 
 			out->last_step = step;
 
-			port_write(out->p, out->v->v[step]);
+			if (out->analog) {
+				analogWrite(out->p, out->v->v[step]);
+			} else {
+				digitalWrite(out->p, out->v->v[step]);
+			}
 		}
 	}
 }

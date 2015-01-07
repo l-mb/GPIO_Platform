@@ -18,6 +18,7 @@
 
 #include "Sources.h"
 #include "SerialMonitor.h"
+#include "Lowlevel.h"
 
 tSources Sources;
 
@@ -37,6 +38,23 @@ void sources_setup(void) {
 	interrupts();
 }
 
+static void source_update_method(int i) {
+	tSourceEntry *s = &Sources.s[i];
+
+	if (!s->period && s->p) {
+		s->method = 2;
+	} else if (s->p > 0) {
+		if (PIN_ANA(s->p))
+			s->method = 0;
+		else
+			s->method = 1;
+	} else if (s->count_ticks > 0) {
+		s->method = 3;
+	} else {
+		SerialUSB.println("ERROR No matching read method for source");
+	}
+}
+
 // Not to be called in interrupt context!
 void source_add(char k, char p, int period, int avg, int mode, int delta) {
 	int i;
@@ -50,6 +68,10 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 		SerialUSB.println("ERROR Averaging too many samples");
 		return;
 	}
+	if (!PIN_IN(p)) {
+		SerialUSB.println("ERROR Invalid port for input");
+		return;
+	}
 
 	for (i = 0; i < Sources.entries; i++) {
 		if (Sources.s[i].k == k) {
@@ -58,7 +80,6 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 		}
 	}
 
-	noInterrupts();
 	s = &Sources.s[Sources.entries];
 	memset(s, 0, sizeof(tSourceEntry));
 	s->k = k;
@@ -67,9 +88,10 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 	s->period = period;
 	s->avg = avg;
 	s->delta = delta;
+	source_update_method(Sources.entries);
 
+	noInterrupts();
 	Sources.entries++;
-
 	master_period(period);
 	interrupts();
 }
@@ -78,7 +100,7 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 // take arguments; there's one IRQ handler per source table entry.
 
 #define _IRQ_Handler_X(n) static void _IRQ_Handler_##n(void) { \
-	if (Sources.s[n].count_ticks > 0) \
+	if (Sources.s[n].count_ticks) \
 		Sources.s[n].ticks++; \
 	else \
 		source_add_value(n); \
@@ -125,7 +147,7 @@ void source_attach_irq(char k, int irq, int trigger, int count_ticks) {
 			SerialUSB.println("WARN This source key does not exist");
 			return;
 	}
-	
+
 	if (trigger == 0)
 		trigger = FALLING;
 	else if (trigger == 1)
@@ -136,21 +158,24 @@ void source_attach_irq(char k, int irq, int trigger, int count_ticks) {
 		SerialUSB.print("WARN Unknown IRQ trigger specified.");
 		return;
 	}
-	
+
 	s->irq = irq;
 	s->trigger = trigger;
 	s->count_ticks = count_ticks;
-	
+
 	if (s->count_ticks && !s->period) {
 		SerialUSB.println("WARN Counting ticks requires period to be non-zero");
 		return;
 	}
 
+	noInterrupts();
+	source_update_method(i);
 	if (IRQ_Handlers[i]) {
 		attachInterrupt(irq, IRQ_Handlers[i], trigger);
 	} else {
 		SerialUSB.println("ERROR No IRQ handler available!?");
 	}
+	interrupts();
 }
 
 static void source_add_value(int i) {
@@ -158,20 +183,17 @@ static void source_add_value(int i) {
 	unsigned long t = micros();
 	int v;
 
-	if (i >= Sources.entries) {
-		SerialUSB.println("Uh-oh! Something really bad happened.");
-	}
-
-	/* If p is 0, this is an interrupt-driven source and we're
-	 * actually sampling the interrupt interval. */
-	if ((s->period == 0) && (s->p > 0)) {
-		v = t - s->last_t;
+	switch (s->method) {
+	case 0:	v = analogRead(s->p); break;
+	case 1: v = digitalRead(s->p); break;
+	case 2: v = t - s->last_t;
 		s->last_t = t;
-	} else if (s->p > 0) {
-		v = port_read(s->p);
-	} else if (s->count_ticks > 0) {
-		v = s->ticks;
+		break;
+	case 3: v = s->ticks;
 		s->ticks = 0;
+		break;
+	default: return; // This should never happen.
+		break;
 	}
 
 	rb.push(t, i, v);
@@ -191,8 +213,7 @@ void sources_poll() {
 		s->countdown -= Master.period;
 		if (s->countdown <= 0) {
 			s->countdown = s->period;
-		
-		source_add_value(i);
+			source_add_value(i);
 		}
 	}
 }
@@ -211,14 +232,14 @@ void sources_process(void) {
 		/* Pull a value from the ring buffer and process it */
 		rb.pull(&t, &i, &v);
 		s = &Sources.s[i];
-		
+
 		if (s->avg > 0) {
 			long sum = 0;
 			int j;
 
 			s->buf[s->cur] = v;
 
-			s->cur++;	
+			s->cur++;
 			if (s->cur == s->avg) {
 				s->cur = 0;
 				s->filled = true;

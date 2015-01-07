@@ -22,6 +22,7 @@
 #include "Sources.h"
 #include "Outputs.h"
 #include "SerialMonitor.h"
+#include "Lowlevel.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // Set to 1 for having all functions log what they do
@@ -65,7 +66,7 @@ void master_period(unsigned long period) {
 		Timer1.stop();
 		Master.period = new_period;
 		Timer1.setPeriod(Master.period);
-		
+
 		if (debug) {
 			SerialUSB.print("DEBUG Timer period adjusted to ");
 			SerialUSB.println(Master.period);
@@ -85,46 +86,13 @@ static void master_handler() {
 	outputs_push();
 }
 
-void port_write(int p, int v) {
-	if (debug > 1) {
-		SerialUSB.print("Writing: ");
-		SerialUSB.print(p);
-		SerialUSB.print(" ");
-		SerialUSB.println(v);
-	}
-	if ((p >= PWM_MIN && p <= PWM_MAX)
-		|| (p >= DAC_MIN && p <= DAC_MAX)) {
-		analogWrite(p, v);
-	} else if (p >= DIGITAL_MIN && p <= DIGITAL_MAX) {
-		if (v > 0)
-			digitalWrite(p, HIGH);
-		else
-			digitalWrite(p, LOW);
-	} else {
-		SerialUSB.print("IO Port out of range for write: ");
-		SerialUSB.println(p);
-	}
-}
-
-int port_read(int p) {
-	if (p >= ANALOG_MIN && p <= ANALOG_MAX) {
-		return analogRead(p);
-	} else if (p >= DIGITAL_MIN && p <= DIGITAL_MAX) {
-		return digitalRead(p);
-	} else {
-		SerialUSB.print("IO Port out of range for read: ");
-		SerialUSB.println(p);
-		return 0;
-	}
-}
-
 /****************************************************************************
  Main code
  ****************************************************************************/
 
 void setup(){
 	SerialMonitor_setup();
-	
+
 	if (debug > 1) {
 		delay(20000);
 		SerialUSB.println("Setting up sources");
