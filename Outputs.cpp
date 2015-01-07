@@ -107,6 +107,13 @@ void output_add(const char k, const int p, const int period, const int step, con
 	int i;
 	tOutputEntry *out;
 
+	for (i = 0; i < Outputs.entries; i++) {
+		if (out->k == k) {
+			SerialUSB.println("ERROR Output key already in use.");
+			return;
+		}
+	}
+
 	for (i = 0; i <= PatternCount; i++) {
 		if (strcmp(Patterns[i].name, name) == 0)
 			break;
@@ -121,7 +128,6 @@ void output_add(const char k, const int p, const int period, const int step, con
 		SerialUSB.println("ERROR Too many output patterns requested");
 		return;
 	}
-
 
 	out = &Outputs.out[Outputs.entries];
 	out->k = k;
