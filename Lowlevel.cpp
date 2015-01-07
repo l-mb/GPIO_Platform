@@ -20,12 +20,6 @@
 #include "Lowlevel.h"
 
 void port_write(int p, int v) {
-	if (debug > 1) {
-		SerialUSB.print("Writing: ");
-		SerialUSB.print(p);
-		SerialUSB.print(" ");
-		SerialUSB.println(v);
-	}
 	if (PIN_PWM(p) || PIN_DAC(p)) {
 		analogWrite(p, v);
 	} else if (PIN_DIG(p)) {
@@ -34,7 +28,7 @@ void port_write(int p, int v) {
 		else
 			digitalWrite(p, LOW);
 	} else {
-		SerialUSB.print("ERROR: IO Port out of range for write: ");
+		SerialUSB.print("ERROR IO Port out of range for write: ");
 		SerialUSB.println(p);
 	}
 }
@@ -45,7 +39,7 @@ int port_read(int p) {
 	} else if (p >= DIGITAL_MIN && p <= DIGITAL_MAX) {
 		return digitalRead(p);
 	} else {
-		SerialUSB.print("IO Port out of range for read: ");
+		SerialUSB.print("ERROR IO Port out of range for read: ");
 		SerialUSB.println(p);
 		return 0;
 	}

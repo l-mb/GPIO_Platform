@@ -227,7 +227,7 @@ void sources_process(void) {
 	int i;
 
 	if ((debug > 1) && rb.overflow()) {
-		SerialUSB.println("Warning: Ring buffer has overflown!");
+		SerialUSB.println("WARN Ring buffer has overflown!");
 	}
 
 	while (rb.entries()) {

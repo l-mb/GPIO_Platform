@@ -52,13 +52,9 @@ void master_period(unsigned long period) {
 	// We default to ticking the timer at least every 10s
 	new_period = 10000000;
 
-	if (debug > 1)
-		SerialUSB.println(" Factoring in source periods");
 	for (i = 0; i < Sources.entries; i++)
 		new_period = gcd(new_period, Sources.s[i].period);
 
-	if (debug > 1)
-		SerialUSB.println(" Factoring in output periods");
 	for (i = 0; i < Outputs.entries; i++)
 		new_period = gcd(new_period, Outputs.out[i].period);
 

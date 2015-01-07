@@ -72,7 +72,7 @@ void output_del(const char k) {
 			break;
 	}
 	if (i == Outputs.entries) {
-		SerialUSB.print("Unknown output referenced: ");
+		SerialUSB.print("ERROR Unknown output referenced: ");
 		SerialUSB.println(k);
 		return;
 	}
@@ -106,7 +106,7 @@ void output_add(const char k, const int p, const int period, const int step, con
 			break;
 	}
 	if (i > PatternCount) {
-		SerialUSB.print("Unknown pattern referenced: ");
+		SerialUSB.print("ERROR Unknown pattern referenced: ");
 		SerialUSB.println(name);
 		return;
 	}
