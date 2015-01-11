@@ -490,6 +490,11 @@ static void cmd_execute() {
 void SerialMonitor_log(unsigned long t, char k, int v) {
 	static unsigned long last_t = 0;
 
+	if (!last_t)
+		last_t = t;
+
+	SerialUSB.print("VAL");
+	SerialUSB.print(DELIM);
 	SerialUSB.print((unsigned long)(t-last_t));
 	SerialUSB.print(DELIM);
 	SerialUSB.print(k);
