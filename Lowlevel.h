@@ -43,7 +43,114 @@
 
 #define PIN_OK(n)  (PIN_PWM(n) || PIN_DAC(n) || PIN_DIG(n) || PIN_ANA(n))
 
-void port_write(int p, int v);
-int port_read(int p);
+int port_ana_r(int p);
+void port_ana_w(int p, int v);
+int port_dig_r(int p);
+void port_dig_w(int p, int v);
+
+typedef struct {
+	const char *name;	// user-readable name
+	int p;			// Numeric port id
+	int (*rfunc)(int);	// Function gets the port value as a parameter (NULL if not readable)
+	void (*wfunc)(int, int); // port, new value (NULL if not writable)
+} tPortListEntry;
+
+const tPortListEntry PortList[] = {
+	{ .name = "none", .p = -2, .rfunc = NULL, .wfunc = NULL }, // Dummy entry so it's easier to check
+	{ .name = "D0", .p = 0, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D1", .p = 1, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D2", .p = 2, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D3", .p = 3, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D4", .p = 4, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D5", .p = 5, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D6", .p = 6, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D7", .p = 7, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D8", .p = 8, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D9", .p = 9, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D10", .p = 10, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D11", .p = 11, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D12", .p = 12, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D13", .p = 13, .rfunc = &port_dig_r, .wfunc = &port_ana_w },
+	{ .name = "D14", .p = 14, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D15", .p = 15, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D16", .p = 16, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D17", .p = 17, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D18", .p = 18, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D19", .p = 19, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D20", .p = 20, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D21", .p = 21, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D22", .p = 22, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D23", .p = 23, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D24", .p = 24, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D25", .p = 25, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D26", .p = 26, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D27", .p = 27, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D28", .p = 28, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D29", .p = 29, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D30", .p = 30, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D31", .p = 31, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D32", .p = 32, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D33", .p = 33, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D34", .p = 34, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D35", .p = 35, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D36", .p = 36, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D37", .p = 37, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D38", .p = 38, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D39", .p = 39, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D40", .p = 40, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D41", .p = 41, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D42", .p = 42, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D43", .p = 43, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D44", .p = 44, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D45", .p = 45, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D46", .p = 46, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D47", .p = 47, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D48", .p = 48, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D49", .p = 49, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D50", .p = 50, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D51", .p = 51, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D52", .p = 52, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "D53", .p = 53, .rfunc = &port_dig_r, .wfunc = &port_dig_w },
+	{ .name = "A0", .p = 54, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A1", .p = 55, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A2", .p = 56, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A3", .p = 57, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A4", .p = 58, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A5", .p = 59, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A6", .p = 60, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A7", .p = 61, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A8", .p = 62, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A9", .p = 63, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A10", .p = 64, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "A11", .p = 65, .rfunc = &port_ana_r, .wfunc = NULL },
+	{ .name = "DAC0", .p = 66, .rfunc = NULL, .wfunc = &port_ana_w },
+	{ .name = "DAC1", .p = 67, .rfunc = NULL, .wfunc = &port_ana_w },
+	// { .name = "I2C-ADS115", .p = ..., .rfunc = &port_i2c_read, .wfunc = NULL },
+};
+
+void port_write(char *portname, int v);
+int port_read(char *portname);
+int port_name2id(char *name);
+int port_lookup(char *name);
+
+
+// Be careful with these.
+inline void _port_write(int i, int v) {
+	// TODO: remove debug code
+	if (!PortList[i].wfunc) {
+		SerialUSB.println("CRITICAL Write to unknown index");
+		return;
+	}
+	PortList[i].wfunc(PortList[i].p, v);
+}
+
+inline int _port_read(int i) {
+	// TODO: remove debug code to speed things up
+	if (!PortList[i].rfunc) {
+		SerialUSB.println("CRITICAL Read from unknown index");
+		return 0;
+	}
+	return PortList[i].rfunc(PortList[i].p);
+}
 
 #endif

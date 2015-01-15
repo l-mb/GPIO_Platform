@@ -42,9 +42,9 @@ mode and then disable it, and read back it's value, here are the
 commands you'd issue:
 
 ```
-pin_out 31
-write 31 0
-read k 31
+pin d31 0
+write D31 0
+read k d31
 ```
 
 # Interface
@@ -62,6 +62,16 @@ bytes.
 
 If you want to resync or discard, hit backspace ('\b'). That will
 discard the entire command buffer and start from scratch.
+
+### Portnames
+
+GPIO_Platform knows about descriptive port names, from *d0* to *d53*,
+from *a0* to *a11*, and *DAC0* and *Dac1*. These are case-insensitive.
+
+Do not specify numeric port ids.
+
+In the future, this will be expanded to handle I²C, SPI and other
+addresses.
 
 ## Output
 
@@ -83,7 +93,7 @@ These are reported in the following format: __*time* *key* *value*__
 
 Syntax: **read** *key* *port*
 
-    read k 31
+    read k d31
 
 Perform a one-shot read of the specified port number and report this
 back as a data point for key *key*. GPIO_Platform automatically knows
@@ -101,11 +111,9 @@ that is polled at a frequency of 1000 Hz, you'd specify a period of
 *1000*). If *0*, this port is **not** periodically polled, but only
 considered when this source is triggered via an interrupt.
 
-*port* is the integer port number. That is *1 - 53* for the digital
-ports, *54 - 65* for the analog inputs. If it is set to *0*, then this
-source is never read; this only makes sense for interrupt-driven
-sources. See **source_attach_irq** for details on which value is
-considered then.
+*port* references the portname. If this is **none**, then this source is
+never read; this only makes sense for interrupt-driven sources. See
+**source_attach_irq** for details on which value is considered then.
 
 If *samples* is not zero, GPIO_Platform will take this many samples into
 account before considering to report this value. This is an easy way to
@@ -132,11 +140,11 @@ Example:
 ```
 // Create a source that reads the analog port 3 and reports its value
 // every 1/10 second if it has changed at all:
-source_add A 57 100000 0 0 1
+source_add A a3 100000 0 0 1
 
 // A source that reports if digital input 31 has been stable for at
 // least 1 second, and changed since the last report:
-source_add X 31 100000 10 2 1
+source_add X D31 100000 10 2 1
 ```
 
 #### source_attach_irq
@@ -147,7 +155,7 @@ Attach an interrupt-trigger to a source.
 
 - *key* refers to a previously configured source. Whenever this
   interrupt here triggers, that source is triggered for processing.
-- *irq* refers to the port number that this interrupt handler should
+- *irq* refers to the port that this interrupt handler should
   monitor.
 - *trigger* the trigger mode. If *0*, the interrupt is triggered on a
   falling edge. *1* triggers on a rising edge. And *2* triggers on any
@@ -160,18 +168,18 @@ Attach an interrupt-trigger to a source.
 
 ```
 // Report the value of analog port 3 whenever digital pin 41 falls:
-source_add A 57 0 0 0 0
-pin 41 0
-source_attach_irq A 41 0 0
+source_add A a3 0 0 0 0
+pin d41 0
+source_attach_irq A d41 0 0
 
 // Count the number of times digital pin 31 is raised per second:
-source_add D 0 1000000 0 0 0
-source_attach_irq D 31 1 1
+source_add D none 1000000 0 0 0
+source_attach_irq D d31 1 1
 
 // Something more complex. Report the average interval between state
 // changes of pin 45, averaged over 8 samples each:
-source_add C 0 0 8 1 0
-source_attach_irq C 45 2 0
+source_add C none 0 8 1 0
+source_attach_irq C d45 2 0
 // (Note that there is a catch here - *if* the final round of times
 //  interrupt 45 triggers is less than 8 times, that last period is
 //  never reported. There is currently no final timeout.)
@@ -187,14 +195,14 @@ Delete the given source.
 
 #### write
 
-Syntax: **write** *port* *value*
+Syntax: **write** *portname* *value*
 
 Write the value to the specified port. Digital or analog ports are automatically
 handled. For digital ports, any non-zero value is treated as *HIGH*.
 
 #### output_add
 
-Syntax: **output_add** *key* *port* *interval* *step* *offset* *mode* *pattern*
+Syntax: **output_add** *key* *portname* *interval* *step* *offset* *mode* *pattern*
 
 Setup a periodic output pattern.
 
@@ -232,24 +240,23 @@ be used, but you can also upload patterns at runtime (eventually).
 
 Examples:
 ```
-// Flip a LED on port 31 on and off every second:
-pin_out 31
-output_add b 31 500000 1 1 0 flip
+// Flip a LED on pin 13 on and off every second:
+output_add b d13 500000 1 1 0 flip
 
 // If you have an RGB LED connected on PWM ports 2-4, this will cycle
 // the colors through the sine curve at different speeds:
-output_add r 2 500 1 0 0 sine
-output_add g 3 1000 1 0 0 sine
-output_add b 4 1500 1 0 0 sine
+output_add r d2 500 1 0 0 sine
+output_add g d3 1000 1 0 0 sine
+output_add b d4 1500 1 0 0 sine
 start
 
 // And this one steps red and blue at the same time, but shifted by one
 // half cycle - a bit like a police cruiser:
 stop
 clear
-write 3 0
-output_add r 2 1000 1 0 0 sine
-output_add b 4 1000 1 0 2047 sine
+write d3 0
+output_add r d2 1000 1 0 0 sine
+output_add b d4 1000 1 0 2047 sine
 start
 ```
 
@@ -286,9 +293,9 @@ Wipe all configured sources and outputs.
 
 #### pin
 
-Syntax: **pin** *pin* *mode*
+Syntax: **portname** *pin* *mode*
 
-Set the specified *pin* to the specified *mode*.
+Set the specified *portname* to the specified *mode*.
 
 - *mode* set to *0* corresponds to *INPUT*
 - *mode* set to *1* corresponds to *INPUT_PULLUP*

@@ -44,10 +44,7 @@ static void source_update_method(int i) {
 	if (!s->period && s->p) {
 		s->method = 2;
 	} else if (s->p) {
-		if (PIN_ANA(s->p))
-			s->method = 0;
-		else
-			s->method = 1;
+		s->method = 0;
 	} else if (s->count_ticks) {
 		s->method = 3;
 	} else {
@@ -57,7 +54,7 @@ static void source_update_method(int i) {
 }
 
 // Not to be called in interrupt context!
-void source_add(char k, char p, int period, int avg, int mode, int delta) {
+void source_add(char k, char *portname, int period, int avg, int mode, int delta) {
 	int i;
 	tSourceEntry *s;
 
@@ -67,10 +64,6 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 	}
 	if (avg > SAMPLES_MAX) {
 		SerialUSB.println("ERROR Averaging too many samples");
-		return;
-	}
-	if (!PIN_IN(p) && (p > 0)) {
-		SerialUSB.println("ERROR Invalid port for input");
 		return;
 	}
 
@@ -84,7 +77,13 @@ void source_add(char k, char p, int period, int avg, int mode, int delta) {
 	s = &Sources.s[Sources.entries];
 	memset(s, 0, sizeof(tSourceEntry));
 	s->k = k;
-	s->p = p;
+	s->p = port_lookup(portname);
+	// This allows zero as a special case for interrupt-driven
+	// sources
+	if ((s->p < 0) || (s->p > 0 && !PortList[s->p].rfunc)) {
+		SerialUSB.println("ERROR Invalid port for input");
+		return;
+	}
 	s->mode = mode;
 	s->period = period;
 	s->avg = avg;
@@ -134,9 +133,18 @@ void (*IRQ_Handlers[SOURCES_MAX])(void) =
 	&_IRQ_Handler_12, &_IRQ_Handler_13, &_IRQ_Handler_14, &_IRQ_Handler_15
 };
 
-void source_attach_irq(char k, int irq, int trigger, int count_ticks) {
-	int i;
+void source_attach_irq(char k, char *irqpin, int trigger, int count_ticks) {
+	int i, irq;
 	tSourceEntry *s;
+
+	i = port_lookup(irqpin);
+	if (i < 1 || i > 54) {
+		// 54 = Magic number! Last digital PIN on the arduino
+		// in the table, the last one that can be used as an IRQ
+		SerialUSB.println("ERROR Invalid pin for IRQ specified");
+		return;
+	}
+	irq = port_name2id(irqpin);
 
 	for (i = 0; i < Sources.entries; i++) {
 		s = &Sources.s[i];
@@ -218,8 +226,8 @@ static void source_add_value(int i) {
 	int v;
 
 	switch (s->method) {
-	case 0:	v = analogRead(s->p); break;
-	case 1: v = digitalRead(s->p); break;
+	// Too much indirection?
+	case 0:	v = _port_read(s->p); break;
 	case 2: v = t - s->last_t;
 		s->last_t = t;
 		break;

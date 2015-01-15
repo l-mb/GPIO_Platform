@@ -88,7 +88,7 @@ static void cmd_start() {
 
 static void cmd_source_add() {
 	char k;
-	int p;
+	char portname[16];
 	int period;
 	int avg;
 	int mode;
@@ -96,7 +96,7 @@ static void cmd_source_add() {
 
 	if (!parse_char(&k))
 		return;
-	if (!parse_int(&p))
+	if (!parse_str(portname, sizeof(portname)))
 		return;
 	if (!parse_int(&period))
 		return;
@@ -111,7 +111,7 @@ static void cmd_source_add() {
 		SerialUSB.print("DEBUG Adding source: ");
 		SerialUSB.print(k);
 		SerialUSB.print(DELIM);
-		SerialUSB.print(p);
+		SerialUSB.print(portname);
 		SerialUSB.print(DELIM);
 		SerialUSB.print(period);
 		SerialUSB.print(DELIM);
@@ -121,20 +121,20 @@ static void cmd_source_add() {
 		SerialUSB.print(DELIM);
 		SerialUSB.println(delta);
 	}
-	source_add(k, p, period, avg, mode, delta);
+	source_add(k, portname, period, avg, mode, delta);
 }
 
 // Technically, this also only modifies the Sources table
 // But that function really, really was getting too large
 static void cmd_source_attach_irq() {
 	char k;
-	int p;
+	char portname[16];
 	int trigger;
 	int count_ticks;
 
 	if (!parse_char(&k))
 		return;
-	if (!parse_int(&p))
+	if (!parse_str(portname, sizeof(portname)))
 		return;
 	if (!parse_int(&trigger))
 		return;
@@ -145,13 +145,13 @@ static void cmd_source_attach_irq() {
 		SerialUSB.print("DEBUG Attaching interupt to source: ");
 		SerialUSB.print(k);
 		SerialUSB.print(DELIM);
-		SerialUSB.print(p);
+		SerialUSB.print(portname);
 		SerialUSB.print(DELIM);
 		SerialUSB.print(trigger);
 		SerialUSB.print(DELIM);
 		SerialUSB.println(count_ticks);
 	}
-	source_attach_irq(k, p, trigger, count_ticks);
+	source_attach_irq(k, portname, trigger, count_ticks);
 }
 
 static void cmd_source_del() {
@@ -169,7 +169,7 @@ static void cmd_source_del() {
 
 static void cmd_output_add() {
 	char k;
-	int p;
+	char portname[16];
 	int period;
 	int step;
 	int offset;
@@ -178,7 +178,7 @@ static void cmd_output_add() {
 
 	if (!parse_char(&k))
 		return;
-	if (!parse_int(&p))
+	if (!parse_str(portname, sizeof(portname)))
 		return;
 	if (!parse_int(&period))
 		return;
@@ -195,7 +195,7 @@ static void cmd_output_add() {
 		SerialUSB.print("DEBUG Adding output: ");
 		SerialUSB.print(k);
 		SerialUSB.print(" port: ");
-		SerialUSB.print(p);
+		SerialUSB.print(portname);
 		SerialUSB.print(" period: ");
 		SerialUSB.print(period);
 		SerialUSB.print(" step: ");
@@ -207,7 +207,7 @@ static void cmd_output_add() {
 		SerialUSB.print(" pattern: ");
 		SerialUSB.println(name);
 	}
-	output_add(k, p, period, step, offset, mode, name);
+	output_add(k, portname, period, step, offset, mode, name);
 }
 
 static void cmd_output_del() {
@@ -242,7 +242,9 @@ static void cmd_dump() {
 		SerialUSB.print(" Key: ");
 		SerialUSB.print(s->k);
 		SerialUSB.print(" Port: ");
-		SerialUSB.print(s->p);
+		SerialUSB.print(PortList[s->p].name);
+		SerialUSB.print(" Method: ");
+		SerialUSB.print(s->method);
 		SerialUSB.print(" Period: ");
 		SerialUSB.print(s->period);
 		SerialUSB.print(" Avg: ");
@@ -275,7 +277,7 @@ static void cmd_dump() {
 		SerialUSB.print("output_add ");
 		SerialUSB.print(out->k);
 		SerialUSB.print(DELIM);
-		SerialUSB.print(out->p);
+		SerialUSB.print(PortList[out->p].name);
 		SerialUSB.print(DELIM);
 		SerialUSB.print(out->period);
 		SerialUSB.print(DELIM);
@@ -322,21 +324,21 @@ static void cmd_pattern_list() {
 }
 
 static void cmd_write() {
-	int port;
 	int value;
+	char portname[16];
 
-	if (!parse_int(&port))
+	if (!parse_str(portname, sizeof(portname)))
 		return;
 	if (!parse_int(&value))
 		return;
 
 	if (debug) {
 		SerialUSB.print("DEBUG Write: ");
-		SerialUSB.print(port);
+		SerialUSB.print(portname);
 		SerialUSB.print(DELIM);
 		SerialUSB.println(value);
 	}
-	port_write(port, value);
+	port_write(portname, value);
 }
 
 static void cmd_writed() {
@@ -361,16 +363,16 @@ static void cmd_writed() {
 }
 
 static void cmd_read() {
-	int port;
 	int v;
 	char k;
+	char portname[16];
 
 	if (!parse_char(&k))
 		return;
-	if (!parse_int(&port))
+	if (!parse_str(portname, sizeof(portname)))
 		return;
 
-	v = port_read(port);
+	v = port_read(portname);
 	SerialMonitor_log(micros(), k, v);
 }
 
@@ -380,13 +382,16 @@ static void cmd_output_reset() {
 }
 
 static void cmd_pin() {
-	int port;
+	char portname[16];
 	int mode;
+	int port;
 
-	if (!parse_int(&port))
+	if (!parse_str(portname, sizeof(portname)))
 		return;
 	if (!parse_int(&mode))
 		return;
+
+	port = port_name2id(portname);
 
 	if (!PIN_OK(port)) {
 		SerialUSB.println("WARN Port not valid");

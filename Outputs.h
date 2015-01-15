@@ -36,7 +36,6 @@ typedef struct {
 	// Internal
 	int countdown;
 	int last_step;
-	bool analog;	// Whether to use analog or digitalWrite
 	tPattern *v;
 } tOutputEntry;
 
@@ -51,7 +50,7 @@ extern tPattern Patterns[];
 extern const int PatternCount;
 
 void outputs_setup(void);
-void output_add(const char k, const int p, const int period, const int step, const int offset, const int mode, const char *name);
+void output_add(const char k, char *portname, const int period, const int step, const int offset, const int mode, const char *name);
 void output_del(const char k);
 void outputs_reset(void);
 void outputs_setup(void);

@@ -59,8 +59,7 @@ static void output_reset(int i) {
 	out->last_step = out->offset;
 	out->countdown = out->period;
 
-	// pinMode(out->p, OUTPUT);
-	port_write(out->p, out->v->v[out->last_step]);
+	_port_write(out->p, out->v->v[out->last_step]);
 }
 
 void output_del(const char k) {
@@ -103,7 +102,7 @@ void outputs_setup(void) {
 	pattern_setup();
 }
 
-void output_add(const char k, const int p, const int period, const int step, const int offset, const int mode, const char *name) {
+void output_add(const char k, char *portname, const int period, const int step, const int offset, const int mode, const char *name) {
 	int i;
 	tOutputEntry *out;
 
@@ -128,31 +127,25 @@ void output_add(const char k, const int p, const int period, const int step, con
 		SerialUSB.println("ERROR Too many output patterns requested");
 		return;
 	}
+	
 
 	out = &Outputs.out[Outputs.entries];
 	out->k = k;
-	out->p = p;
+	out->p = port_lookup(portname);
+	if (out->p < 1 || !PortList[out->p].wfunc) {
+		SerialUSB.println("ERROR Invalid port for output");
+		return;
+	}
 	out->period = period;
 	out->step = step;
 	out->offset = offset;
 	out->mode = mode;
 	out->v = &Patterns[i];
 
-	if (PIN_DIG(p)) {
-		out->analog = false;
-	} else if (PIN_PWM(p) || PIN_DAC(p)) {
-		out->analog = true;
-	} else {
-		SerialUSB.println("ERROR Invalid pin for output");
-		return;
-	}
-
 	noInterrupts();
 	output_reset(Outputs.entries);
 	Outputs.entries++;
-
 	master_period();
-
 	interrupts();
 }
 
@@ -187,13 +180,8 @@ void outputs_push(void) {
 
 			out->last_step = step;
 
-			if (out->analog) {
-				analogWrite(out->p, out->v->v[step]);
-			} else {
-				digitalWrite(out->p, out->v->v[step]);
-			}
+			_port_write(out->p, out->v->v[step]);
 		}
 	}
 }
-
 
