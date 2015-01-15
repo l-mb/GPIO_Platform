@@ -43,7 +43,6 @@
 
 #define PIN_OK(n)  (PIN_PWM(n) || PIN_DAC(n) || PIN_DIG(n) || PIN_ANA(n))
 
-#define PIN_OUTPUT(n) (
 void port_write(int p, int v);
 int port_read(int p);
 
