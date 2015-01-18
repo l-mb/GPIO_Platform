@@ -48,6 +48,8 @@ void port_ana_w(int p, int v);
 int port_dig_r(int p);
 void port_dig_w(int p, int v);
 
+int port_ads1115_r(int p);
+
 typedef struct {
 	const char *name;	// user-readable name
 	int p;			// Numeric port id
@@ -125,7 +127,16 @@ const tPortListEntry PortList[] = {
 	{ .name = "A11", .p = 65, .rfunc = &port_ana_r, .wfunc = NULL },
 	{ .name = "DAC0", .p = 66, .rfunc = NULL, .wfunc = &port_ana_w },
 	{ .name = "DAC1", .p = 67, .rfunc = NULL, .wfunc = &port_ana_w },
-	// { .name = "I2C-ADS115", .p = ..., .rfunc = &port_i2c_read, .wfunc = NULL },
+	// TODO: this needs more options to configure etc
+	// Right now, will only do comparison to GND
+	{ .name = "ads0-0", .p = 0, .rfunc = &port_ads1115_r, .wfunc = NULL },
+	{ .name = "ads0-1", .p = 1, .rfunc = &port_ads1115_r, .wfunc = NULL },
+	{ .name = "ads0-2", .p = 2, .rfunc = &port_ads1115_r, .wfunc = NULL },
+	{ .name = "ads0-3", .p = 3, .rfunc = &port_ads1115_r, .wfunc = NULL },
+	{ .name = "ads0-0n1", .p = 4, .rfunc = &port_ads1115_r, .wfunc = NULL },
+	{ .name = "ads0-0n3", .p = 5, .rfunc = &port_ads1115_r, .wfunc = NULL },
+	{ .name = "ads0-1n3", .p = 6, .rfunc = &port_ads1115_r, .wfunc = NULL },
+	{ .name = "ads0-2n3", .p = 7, .rfunc = &port_ads1115_r, .wfunc = NULL },
 };
 
 void port_write(char *portname, int v);

@@ -17,6 +17,10 @@
  */
 
 #include <DueTimer.h>
+#include <Wire.h>
+#include <ADS1115.h>
+#include <Arduino.h>
+
 #include "GPIO_Platform.h"
 
 #include "Sources.h"
@@ -91,7 +95,14 @@ void setup(){
 
 	if (debug > 1) {
 		delay(20000);
-		SerialUSB.println("Setting up sources");
+		SerialUSB.println("Joining I²C bus at 400 kHz");
+	}
+	Wire.begin();
+	Wire.setClock(400000);
+
+	if (debug > 1) {
+		delay(20000);
+		SerialUSB.println("setting up sources");
 	}
 	sources_setup();
 	if (debug > 1) {

@@ -18,6 +18,7 @@
 
 #include "GPIO_Platform.h"
 #include "Lowlevel.h"
+#include <ADS1115.h>
 
 // Lookup a port in the table, returns the index entry
 // returns -1 if not found
@@ -76,5 +77,40 @@ int port_dig_r(int p) {
 
 void port_dig_w(int p, int v) {
 	digitalWrite(p, v);
+}
+
+static ADS1115 ads0(ADS1115_ADDRESS_ADDR_GND);
+
+int port_ads1115_r(int p) {
+	static bool _init = false;
+
+	if (_init == false) {
+		ads0.initialize();
+		ads0.setRate(ADS1115_RATE_860);
+		ads0.setGain(ADS1115_PGA_4P096);
+		ads0.setMode(ADS1115_MODE_CONTINUOUS);
+		_init = true;
+	}
+
+	switch (p) {
+        case 0:	return ads0.getConversionP0GND();
+		break;
+        case 1:	return ads0.getConversionP1GND();
+		break;
+        case 2:	return ads0.getConversionP2GND();
+		break;
+        case 3:	return ads0.getConversionP3GND();
+		break;
+        case 4: return ads0.getConversionP0N1();
+		break;
+        case 5: return ads0.getConversionP0N3();
+		break;
+        case 6: return ads0.getConversionP1N3();
+		break;
+        case 7: return ads0.getConversionP2N3();
+		break;
+	default: SerialUSB.println("ERROR Unknown port for ADS1115 on default address");
+	}
+
 }
 
